@@ -16,12 +16,24 @@ export interface Voivodeship {
 
   getWojewodztwa():Observable<Voivodeship[]> {
     const headers = new Headers({'Content-Type': 'application/json'})
-    return this.http.get('https://api3.mojaekipa.pl/v1/voivodeship', {
-        headers: headers
+    return this.http.get('https://api.mojaekipa.pl/v1/voivodeship')
+      .map((data:Response) => {
+        console.log('apiCallOk', data.json());
       })
-      .map((data:Response) => data.json())
       .catch((err:Response) => {
-        console.error('error', err.json());
+        err.status = 401;
+        if(err.status == 401) {
+          console.error('apiCallError - NotLogged (request for new token)', err.json());
+          return this.http.get('https://api3.mojaekipa.pl/v1/specializations');
+        } else {
+          console.error('apiCallError - Other error', err.json());
+          return Observable.throw(err);
+        }
+      }).map((data:Response) => {
+        console.log('requestTokenOk - return api call', data.json());
+        return this.http.get('https://api3.mojaekipa.pl/v1/voivodeship');
+      }).catch((err:Response)=>{
+        console.error('requestTokenError ', err.json());
         return Observable.throw(err);
       });
   }
